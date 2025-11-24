@@ -1,2 +1,2 @@
-# ZLSS
+# ZLSS - WORK IN PROGRESS
 ZLSS Compression

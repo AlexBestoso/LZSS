@@ -1,0 +1,8 @@
+Some things we want to do:
+
+1) ensure that movDictionary() functions how we expect it to function.
+2) ensure that shiftLookahead functions as expected.
+	this function should go from a populated buffer and slowly dissolve into all -1s
+3) ensure that the class compiles.
+4) test error handling system.
+5) simplify what we can in the compress function.
