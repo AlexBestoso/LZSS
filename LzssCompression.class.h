@@ -13,6 +13,7 @@ class LZSSCompression{
 		size_t matchMinimum;
 
 		signed int error;
+		int compressedCount;
 		
 		void destroyOut(void){
 #if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
@@ -57,6 +58,7 @@ class LZSSCompression{
 			this->lookahead = NULL;
 			this->lookahead_s = 0;
 			this->matchMinimum = 5;
+			this->compressedCount = 0;
 		}
 
 
@@ -110,6 +112,7 @@ class LZSSCompression{
 		}
 		
 		std::string dictToLookCheck(void){
+			this->compressedCount = 0;
 			if(this->dictionary == NULL){
 				return "";
 			}
@@ -184,28 +187,33 @@ class LZSSCompression{
 					}
 					delete[] transferBuffer;
 					transferBuffer = NULL;
+					if(transferCount <= 0) break;
 				}
 			}
 			
 			if(possibleMatches != NULL && possibleSize > 0)
 				ret = "<"+std::to_string(possibleSize)+","+std::to_string(possibleMatches[0])+">";
+			int returnSize = ret.length();
 			if(possibleSize <= 0){
+				this->compressedCount = 1;
 				ret = "";
 				if(this->lookahead[0] == -1) return "";
 				ret += this->lookahead[0];
 				this->movDictionary(lookahead[0]);
-			}else if(possibleSize <= ret.length()){
+			}else if(possibleSize <= returnSize){
 				ret = "";
-				for(int i=0; i<5; i++){
+				for(int i=0; i<possibleSize; i++){
 					if(this->lookahead[i] == -1) break;
 					ret += this->lookahead[i];
 					this->movDictionary(this->lookahead[i]);
 				}
+				this->compressedCount = possibleSize;
 			}else{
 				for(int i=0; i<possibleSize; i++){
 					if(this->lookahead[i] == -1) break;
 					this->movDictionary(this->lookahead[i]);
 				}
+				this->compressedCount = possibleSize;
 			}
 
 			
@@ -320,9 +328,9 @@ class LZSSCompression{
 				#endif
 				obuf += match;
 				obuf_s += match.length();
-				for(int j=0; j<match.length(); j++)
+				for(int j=0; j<this->compressedCount; j++)
 					this->shiftLookahead(data, dataSize, i+this->lookahead_s+j);
-				i = i + match.length()-1;
+				i = i + this->compressedCount-1;
 				#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
 				printf("\033[35;1m[DBG] ");
 				this->printLookahead();
@@ -331,6 +339,13 @@ class LZSSCompression{
 				printf("\033[0m");
 				#endif
 			}	
+
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+			printf("\033[35;1m[DBG] ");
+			for(int i=0; i<obuf_s; i++){
+				printf("%c", obuf[i]);
+			}printf("\n\033[0m");
+			#endif
 			return true;
 		}
 
