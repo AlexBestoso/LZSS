@@ -1,8 +1,6 @@
 #define LZSSCOMPRESSION_VERBOSE_DEBUG 1
 class LZSSCompression{
 	private:
-		char *out;
-		size_t out_s;
 		
 		signed int *dictionary;
 		size_t dictionary_s;
@@ -111,6 +109,7 @@ class LZSSCompression{
 			printf("\n");
 		}
 		
+		// We may need to add one to the token offset if we want to be compatible with the standard. 
 		std::string dictToLookCheck(void){
 			this->compressedCount = 0;
 			if(this->dictionary == NULL){
@@ -220,7 +219,9 @@ class LZSSCompression{
 			return ret;
 		}
 	public:
-	
+		char *out;
+		size_t out_s;
+
 		LZSSCompression(){
 			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
 			printf("\033[35;1m[DBG] Constructing LZSSCompression class.\n\033[0m");
@@ -346,6 +347,13 @@ class LZSSCompression{
 				printf("%c", obuf[i]);
 			}printf("\n\033[0m");
 			#endif
+
+			this->destroyOut();
+			this->out_s = obuf_s;
+			this->out = new char[obuf_s];
+			for(int i=0; i<obuf_s; i++){
+				out[i] = obuf[i];
+			}
 			return true;
 		}
 
