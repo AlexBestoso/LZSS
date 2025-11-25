@@ -1,2 +1,2 @@
-# ZLSS - WORK IN PROGRESS
-ZLSS Compression
+# LZSS - WORK IN PROGRESS
+LZSS Compression, non-standard implementation.

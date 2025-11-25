@@ -285,6 +285,8 @@ class LZSSCompression{
 				case 0x120: return "compress(char *data, size_t dataSize) - this->dictionary is null.";
 				case 0x121: return "compress(char *data, size_t dataSize) - this->dictionary_s is <= 0. dictionary treated as null.";
 				case 0x200: return "compress(char *data, size_t dataSize) - dFoundIndex < -1. There appears to have been an underflow.";
+				case 0x300: return "decompress(char *data, size_t dataSize) - data is null.";
+				case 0x301: return "bool decompress(char *data, size_t dataSize) - dataSize <= 0, treating data as null.";
 				default: return "unknown error.";
 			}
 		}
@@ -358,6 +360,20 @@ class LZSSCompression{
 		}
 
 		bool decompress(char *data, size_t dataSize){
+			if(data == NULL){
+				this->error = 0x300;
+				return false;
+			}
+			if(dataSize <= 0){
+				this->error = 0x301;
+				return false;
+			}
+			std::string obuf = "";
+			size_t obuf_s=0;
+			for(int i=0; i<dataSize; i++){
+				
+			}
+			
 			return true;
 		}
 };
