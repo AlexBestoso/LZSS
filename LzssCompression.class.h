@@ -340,7 +340,7 @@ class LZSSCompression{
                         #endif
 
 			int newBits = 17; // 2 bytes, plus 1 flag
-			int start = this->out_s <= 0 ? 0 : this->out_s;
+			int start = this->out_s <= 0 ? 0 : this->out_s-1;
 			// re-allocate output buffer.
 			this->outBitCount += newBits;
 			size_t newOutSize = this->out_s;

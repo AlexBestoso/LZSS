@@ -6,7 +6,7 @@
 int main(void){
 	printf("Testing Compression.\n");
 	LZSSCompression lzss;
-	std::string msg = "this is my compression algorithm. It is very cool. I like compression.";
+	std::string msg = "this is my compression algorithm. It is very cool. I like compression.!";
 	printf("Compressing (%ld) %s\n", msg.length(), msg.c_str());
 	if(!lzss.compress((char *)msg.c_str(), msg.length())){
 		printf("Compression Failed: '%s'\n", lzss.getErrorMsg().c_str());
