@@ -241,12 +241,17 @@ class LZSSCompression{
 				this->error = 0x201;
 				return false;
 			}
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+				printf("\033[35;1m[DBG] Inserting Literal\n");
+				printf("\033[35;1m[DBG] Processing %ld bytes, starting out size is %ld, starting offset is %d\n", count, this->out_s, this->overflowOffset);
+			#endif
+			// modify this section so that if the offset if not a perfect byte, no new char is added.
 			size_t newBits = (8*count)+count;
-			int start = this->out_s <= 0 ? 0 : this->out_s;
+			int start = this->out_s <= 0 ? 0 : this->out_s-1;
 			if(this->out == NULL || this->out_s <= 0){
 				this->destroyOut();
 				this->outBitCount = newBits;
-				if((this->outBitCount%8) != 0)
+				if((this->overflowOffset%8) == 0)
 					this->out_s += count+1;
 				else
 					this->out_s += count;
@@ -255,22 +260,28 @@ class LZSSCompression{
 			}else{
 				this->outBitCount += newBits;
 				size_t newOutSize = this->out_s;
-				if((this->outBitCount%8) != 0){
+				if((this->overflowOffset%8) == 0){
 					newOutSize += count+1;
 				}else{
 					newOutSize += count;
 				}
 				this->resizeOutput(newOutSize);
 			}
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+			printf("[DBG] new out size is %ld, starting process on index %d\n", this->out_s, start);
+			#endif
 			int end = this->out_s;
 			int lIterator = 0;
-			for(int i=start; i<end && lIterator<this->lookahead_s; i++){
+			for(int i=start; i<end && lIterator<this->lookahead_s && lIterator<count; i++){
 				signed int lookchar = this->lookahead[lIterator];
 				if(lookchar == -1) break;
 				lIterator++;
 				
 				//         flag                         remove excess       shift to fit container
-				out[i] = (0x00<<(7-this->overflowOffset)) + ((lookchar&0xff) >> (1+this->overflowOffset));
+				out[i] += (0x00<<(7-this->overflowOffset)) + ((lookchar&0xff) >> (1+this->overflowOffset));
+				#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+				printf("[DBG] Original : '0x%x' | flag : '0x%x' | right shifted byte (%d) : '0x%x'\n", lookchar, (0x00<<(7-this->overflowOffset)), 1+this->overflowOffset, ((lookchar&0xff) >> (1+this->overflowOffset)));
+				#endif
 					
 				// ajust for the shifting offset position
 				this->overflowOffset = (this->overflowOffset + 1) % 8;
@@ -282,10 +293,21 @@ class LZSSCompression{
 					int clearer = 0xff >> (8-this->overflowOffset);
 					lookchar &= clearer;
 					//            add unused bits
-					out[i] = lookchar << (8-this->overflowOffset);
+					out[i] += lookchar << (8-this->overflowOffset);
+					#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+                                	printf("[DBG] cleared byte : '0x%x' | left shifted byte (%d) : '0x%x'\n", lookchar, 8-this->overflowOffset, lookchar << (8-this->overflowOffset));
+                                	#endif
 				}
-				i--;
+				i--;			
+				#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+				printf("[DBG] Generated output : ");
+				for(int i=0; i<this->out_s; i++){
+					printf("0x%x ", this->out[i]&0x000000ff );
+				}printf("\n");
+				#endif
 			}
+			printf("\033[0m");
+
 			return true;
 		}
 		/*
@@ -313,12 +335,16 @@ class LZSSCompression{
 				return false;
 			}
 
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+                                printf("\033[35;1m[DBG] Inserting Token\n");
+                        #endif
+
 			int newBits = 17; // 2 bytes, plus 1 flag
 			int start = this->out_s <= 0 ? 0 : this->out_s;
 			// re-allocate output buffer.
 			this->outBitCount += newBits;
 			size_t newOutSize = this->out_s;
-			if((this->outBitCount%8) != 0){
+			if((this->overflowOffset%8) != 0){
 				newOutSize += 2+1;
 			}else{
 				newOutSize += 2;
@@ -327,21 +353,41 @@ class LZSSCompression{
 			int end = this->out_s;
 
 			// inject the size.
-			out[start]  = (0x01<<(7-this->overflowOffset)) + ((size&0xff) >> (1+this->overflowOffset));
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+			printf("[DBG] size : 0x%x | token : 0x%x | right shifted value(%d) : 0x%x\n", size, (0x01<<(7-this->overflowOffset)), 1+this->overflowOffset, ((size&0xff) >> (1+this->overflowOffset)));
+			#endif
+			out[start]  += (0x01<<(7-this->overflowOffset)) + ((size&0xff) >> (1+this->overflowOffset));
 			this->overflowOffset = (this->overflowOffset + 1) % 8;
 			start++;
 			if(start >= end) return false;
 			int clearer = 0xff >> (8-this->overflowOffset);
                         size &= clearer;
                         out[start] = size << (8-this->overflowOffset);
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+			printf("[DBG] cleared size : '0x%x' | left shifted size (%d) : '0x%x'\n", size, 8-this->overflowOffset, size << (8-this->overflowOffset));
+			printf("[DBG] Generated output : ");
+			for(int i=0; i<this->out_s; i++){
+				printf("0x%x ", this->out[i]&0x000000ff );
+			}printf("\n");
+			#endif			
 
 			// inject the distance (doesn't change overflow, full byte.
-			out[start]  = ((distance&0xff) >> (this->overflowOffset));
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+                        printf("[DBG] distance : 0x%x | token : N/A | right shifted value(%d) : 0x%x\n", distance, 1+this->overflowOffset, ((distance&0xff) >> (1+this->overflowOffset)));
+                        #endif
+			out[start]  += ((distance&0xff) >> (this->overflowOffset));
 			start++;
 			if(start >= this->out_s) return false;
 			clearer = 0xff >> (8-this->overflowOffset);
                         distance &= clearer;
                         out[start] = distance << (8-this->overflowOffset);
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+			printf("[DBG] cleared size : '0x%x' | left shifted size (%d) : '0x%x'\n", distance, 8-this->overflowOffset, distance << (8-this->overflowOffset));
+			printf("[DBG] Generated output : ");
+			for(int i=0; i<this->out_s; i++){
+				printf("0x%x ", this->out[i]&0x000000ff );
+			}printf("\n\033[0m");
+			#endif			
 
 			return true;	
 		}
@@ -354,8 +400,6 @@ class LZSSCompression{
 			if(this->lookahead == NULL){
 				return false;
 			}
-			std::string ret = "";
-			
 			size_t possibleMatchesSize = 0;
 			size_t possibleSize = 0;
 			int *possibleMatches = NULL;
@@ -425,16 +469,18 @@ class LZSSCompression{
 				}
 			}
 			
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+			printf("\033[35;1m[DBG] Processed %ld bytes\n\033[0m", possibleSize);
+			#endif
 			if(possibleSize <= 0){
 				if(this->lookahead[0] == -1) return false;
 				this->compressedCount = 1;
-				this->insertLiteral(possibleSize);
+				this->insertLiteral(1);
 				this->movDictionary(lookahead[0]);
 			}else if(possibleSize <= 3){
-				this->insertLiteral(possibleSize);
-				for(int i=0; i<possibleSize; i++){
-					if(this->lookahead[i] == -1) break;
-					this->movDictionary(this->lookahead[i]);
+				for(int i=0; i<possibleSize && i<this->lookahead_s; i++){
+					this->insertLiteral(1);
+					this->movDictionary(lookahead[i]);
 				}
 				this->compressedCount = possibleSize;
 			}else{
@@ -539,81 +585,23 @@ class LZSSCompression{
 			// init lookahead
 			for(int i=0; i<this->lookahead_s || i<dataSize; i++)
                                 this->shiftLookahead(data, dataSize, i);
+			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
+				printf("\033[35;1m[DBG] Starting lookahead buffer: ");
+				this->printLookahead();
+				printf("\033[0;m");
+			#endif
 			// process data
 			for(int i=0; i<dataSize; i++){
 				this->encode();
                                 for(int j=0; j<this->compressedCount; j++)
                                         this->shiftLookahead(data, dataSize, i+this->lookahead_s+j);
-                                i = i + this->compressedCount-1;
-
-			}
-			return true;
-		}
-
-		bool depricated_compress(char *data, size_t dataSize){
-			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
-			printf("\033[35;1m[DBG] Compressing %ld bytes.\n\033[0m", dataSize);
-			#endif
-			if(data == NULL || dataSize <= 0){
-				this->error = data == NULL ? 0x100 : 0x101;
-				return false;
-			}
-			if(this->lookahead == NULL || this->lookahead_s <= 0){
-				this->error = this->lookahead == NULL ? 0x110 : 0x111;
-				return false;
-			}else if(this->lookahead_s > dataSize){
-				this->error = 0x112;
-				return false;
-			}
-			if(this->dictionary == NULL){
-				this->error = this->dictionary == NULL ? 0x120 : 0x121;
-				return false;
-			}
-			
-			this->destroyOut();
-
-			std::string obuf="";
-			size_t obuf_s = 0;
-			for(int i=0; i<this->lookahead_s && i<dataSize; i++){
-				this->shiftLookahead(data, dataSize, i);
-			}
-			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
-			printf("\033[35;1m[DBG] ");
-			this->printLookahead();
-			printf("\033[0m");
-			#endif
-			
-			for(int i=0; i<dataSize; i++){
-				std::string match = this->dictToLookCheck();
-				#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
-				printf("\033[35;1m[DBG] Match : '%s'\n\033[0m", match.c_str());
-				#endif
-				obuf += match;
-				obuf_s += match.length();
-				for(int j=0; j<this->compressedCount; j++)
-					this->shiftLookahead(data, dataSize, i+this->lookahead_s+j);
-				i = i + this->compressedCount-1;
 				#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
 				printf("\033[35;1m[DBG] ");
 				this->printLookahead();
-				printf("[DBG] ");
-				this->printDictionary();
 				printf("\033[0m");
 				#endif
-			}	
+                                i = i + this->compressedCount-1;
 
-			#if LZSSCOMPRESSION_VERBOSE_DEBUG == 1
-			printf("\033[35;1m[DBG] ");
-			for(int i=0; i<obuf_s; i++){
-				printf("%c", obuf[i]);
-			}printf("\n\033[0m");
-			#endif
-
-			this->destroyOut();
-			this->out_s = obuf_s;
-			this->out = new char[obuf_s];
-			for(int i=0; i<obuf_s; i++){
-				out[i] = obuf[i];
 			}
 			return true;
 		}
