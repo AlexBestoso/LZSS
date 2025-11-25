@@ -1,5 +1,7 @@
-Some things we want to do:
-1) rebuild the compress function so that it uses bitwise operations.
-2) new system should structure the data so that there's a 0 or a 1 before each binary byte.
-	where a 0 means that the byte is literally a byte, and a 1 means that we're looking at a 
-	size and offset combo.
+WAKAKAKAKAKAKAKA FLAKCKCKCKCKAKCAKCKACKACKA NGOFFFER
+
+Next steps: 
+	- add debug prints to the new encode function.
+	- add debug prints to the injection functions
+	- add debug prints to the new compression function.
+	- debug, mother fucker@!
