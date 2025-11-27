@@ -77,10 +77,10 @@ class LZSSCompression{
 			}
 			if(index >= dataSize || index < 0){
 				this->lookahead[this->lookahead_s-1] = -1;
-				lookaheadAvailable--;
+				this->lookaheadAvailable--;
 			}else{
 				this->lookahead[this->lookahead_s-1] = (signed int)data[index];
-				lookaheadAvailable++;
+				this->lookaheadAvailable++;
 			}
 			return true;
 		}
@@ -259,7 +259,7 @@ class LZSSCompression{
 			return true;	
 		}
 
-		bool encode(char lastChar){
+		bool encode(void){
 			this->compressedCount = 0;
 			if(this->dictionary == NULL){
 				return false;
@@ -279,7 +279,6 @@ class LZSSCompression{
 					return true;
 				}
 				signed int target = this->lookahead[l];
-				if(target == -1) break; // no more data to process.
 				if(possibleSize == 0 && l > 0) break; // no matches found
 
 				if(possibleSize == 0){
@@ -381,6 +380,7 @@ class LZSSCompression{
 		void setDictionarySize(size_t size){
 			this->destroyDictionary();
 			this->dictionary_s = size;
+			if(size <= 0) return;
 			this->dictionary = new signed int[size];
 			for(int i=0; i<size; i++)
 				this->dictionary[i] = -1;
@@ -392,6 +392,7 @@ class LZSSCompression{
 		void setLookaheadSize(size_t size){
 			this->destroyLookahead();
 			this->lookahead_s = size;
+			if(size <= 0) return;
 			this->lookahead = new signed int[size];
 			for(int i=0; i<size; i++)
 				this->lookahead[i] = -1;
@@ -438,7 +439,7 @@ class LZSSCompression{
                                 this->error = this->lookahead == NULL ? 0x110 : 0x111;
                                 return false;
                         }
-                        if(this->dictionary == NULL){
+                        if(this->dictionary == NULL || this->dictionary_s <= 0){
                                 this->error = this->dictionary == NULL ? 0x120 : 0x121;
                                 return false;
                         }
@@ -450,7 +451,7 @@ class LZSSCompression{
 			}
 			// process data
 			for(int i=0; i<dataSize; i++){
-				bool encCode = this->encode(data[dataSize-1]);
+				bool encCode = this->encode();
 				if(!encCode && this->error > -1){
 					printf("Error : %s\n", this->getErrorMsg().c_str());
 					return false;

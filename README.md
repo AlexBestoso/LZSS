@@ -1,6 +1,8 @@
 # LZSS - C++
 LZSS Compression
 
+<b>NOTICE : The JavaScript implementation has yet to go through any quality assurance testing. Though it should work becuase I said so. </b>
+
 All known 8-bit bytes can be processed by this implementation.
 This hasn't been tested with massive files, although it should work because of how it's designed.
 
@@ -15,6 +17,3 @@ Other than that, this implementation uses bitwise operations to pack the compres
 A bit of 1 is added to designate a "token", and is always followed by a series of 16 bits, a size and a distance, in that order.
 
 To compile this, run `make`
-
-## near future plan (probably tomorrow): 
-Provide a javascript implementation of the algorithm to complement this C++ version. The goal is to enable REST endpoints to receive compressed data and decompress it.
