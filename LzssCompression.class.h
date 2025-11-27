@@ -3,6 +3,7 @@ class LZSSCompression{
 	private:
 		signed int *dictionary;
 		size_t dictionary_s;
+		signed int dictionaryAvailable;
 		
 		signed int *lookahead;
 		size_t lookahead_s;
@@ -46,6 +47,7 @@ class LZSSCompression{
 			this->compressedCount = 0;
 			this->overflowOffset = 0;
 			this->lookaheadAvailable=0;
+			this->dictionaryAvailable=0;
 		}
 
 
@@ -283,7 +285,7 @@ class LZSSCompression{
 
 				if(possibleSize == 0){
 					for(int d=0; d<this->dictionary_s; d++){
-						if(this->dictionary[d] == -1) break;
+						//if(this->dictionaryAvailable <= 0) break; // This may never actually happen.
 						if(target == this->dictionary[d]){
 							possibleMatchesSize++;
 							if(possibleMatches == NULL){
