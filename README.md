@@ -1,8 +1,20 @@
-# LZSS - WORK IN PROGRESS
-LZSS Compression, non-standard implementation.
+# LZSS - C++
+LZSS Compression
 
-Compression and decompression appears functional.
-Quality Assurance and some code refactoring is the next step. Afterwhich I'll be creating a javascript implementation to complement the C++ code.
+All known 8-bit bytes can be processed by this implementation.
+This hasn't been tested with massive files, although it should work because of how it's designed.
+
+Not all strings can be compressed. If there's no matches, this will produce a larger result than what was provided.
+
+As of now, the maximum number of bytes that can be compressed is 256. The algorithm can be improved to enable larger matches.
+
+This is not the most efficient implementation of LZSS compression. The `movDictionary()` allowcates a second buffer to shift the bytes, and
+the string matching algorithm can likely be improved as well.
+
+Other than that, this implementation uses bitwise operations to pack the compressed data. The method used involves providing a bit value of 0 before every series of 8 bits. These are your literals.
+A bit of 1 is added to designate a "token", and is always followed by a series of 16 bits, a size and a distance, in that order.
 
 To compile this, run `make`
-to compile this with debug output enabled, run `make debug` 
+
+## near future plan (probably tomorrow): 
+Provide a javascript implementation of the algorithm to complement this C++ version. The goal is to enable REST endpoints to receive compressed data and decompress it.

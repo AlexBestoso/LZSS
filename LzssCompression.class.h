@@ -1,9 +1,8 @@
-#define LZSSCOMPRESSION_VERBOSE_DEBUG 0
 class LZSSCompression{
 	private:
 		signed int *dictionary;
 		size_t dictionary_s;
-		signed int dictionaryAvailable;
+		//signed int dictionaryAvailable;
 		
 		signed int *lookahead;
 		size_t lookahead_s;
@@ -47,7 +46,7 @@ class LZSSCompression{
 			this->compressedCount = 0;
 			this->overflowOffset = 0;
 			this->lookaheadAvailable=0;
-			this->dictionaryAvailable=0;
+			//this->dictionaryAvailable=0;
 		}
 
 
