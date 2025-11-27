@@ -10,7 +10,7 @@ int main(void){
 	printf("Compressing (%d)\n\t", 256);
 	for(int i=0; i<256; i++){
 		test[i] = (char)i;
-		printf("%c", test[i]);
+		printf("%d ", test[i]);
 	}printf("\n");
 	if(!lzss.compress(test, 256)){
 		printf("Compression Failed: '%s'\n", lzss.getErrorMsg().c_str());
@@ -18,7 +18,7 @@ int main(void){
 	}
 	printf("Compression Succeeded, compressed to %ld bytes\n\n", lzss.out_s);
 	for(int i=0; i<lzss.out_s; i++){
-		printf("%c", lzss.out[i]);
+		printf("%d ", lzss.out[i]);
 	}printf("\n");
 
 	size_t compressedData_s = lzss.out_s;
@@ -34,7 +34,7 @@ int main(void){
 
 	printf("Decompression Succeeded, decompressed to %ld bytes\n\n", lzss.out_s);
 	for(int i=0; i<lzss.out_s; i++){
-		printf("%c", lzss.out[i]);
+		printf("%d ", lzss.out[i]);
 	}printf("\n");
 	
 	delete[] compressedData;
