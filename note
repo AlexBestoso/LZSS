@@ -1,0 +1,4 @@
+
+The issue is because my lookahead buffer uses -1 to determine if the array is empty; but negative 1 IS a valid value.
+
+So replace the error handling with a counter that dermines how many cells are currently active in the array.

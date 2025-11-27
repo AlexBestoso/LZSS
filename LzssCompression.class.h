@@ -6,6 +6,7 @@ class LZSSCompression{
 		
 		signed int *lookahead;
 		size_t lookahead_s;
+		signed int lookaheadAvailable;
 
 		signed int error;
 		int compressedCount;
@@ -44,6 +45,7 @@ class LZSSCompression{
 			this->lookahead_s = 0;
 			this->compressedCount = 0;
 			this->overflowOffset = 0;
+			this->lookaheadAvailable=0;
 		}
 
 
@@ -74,8 +76,10 @@ class LZSSCompression{
 			}
 			if(index >= dataSize || index < 0){
 				this->lookahead[this->lookahead_s-1] = -1;
+				lookaheadAvailable--;
 			}else{
 				this->lookahead[this->lookahead_s-1] = (signed int)data[index];
+				lookaheadAvailable++;
 			}
 			return true;
 		}
@@ -149,10 +153,11 @@ class LZSSCompression{
 			if(lookIndex >= this->lookahead_s || lookIndex < 0){
 				return false;
 			}
-			signed int lookchar = this->lookahead[lookIndex];
-			if(lookchar == -1){
-				return true; // this may be an error, don't know yet.
+			if(this->lookaheadAvailable <= 0){
+				this->lookaheadAvailable = 0;
+				return true;
 			}
+			signed int lookchar = this->lookahead[lookIndex];
 	
 			// we need to account for when offset + 1 is equal to 8, which results in data loss...
 			if(1+this->overflowOffset < 8){
@@ -253,7 +258,7 @@ class LZSSCompression{
 			return true;	
 		}
 
-		bool encode(void){
+		bool encode(char lastChar){
 			this->compressedCount = 0;
 			if(this->dictionary == NULL){
 				return false;
@@ -261,12 +266,17 @@ class LZSSCompression{
 			if(this->lookahead == NULL){
 				return false;
 			}
+
 			size_t possibleMatchesSize = 0;
 			size_t possibleSize = 0;
 			int *possibleMatches = NULL;
 			int *transferBuffer = NULL;
 			
 			for(int l=0; l<this->lookahead_s; l++){
+				if(this->lookaheadAvailable <= 0){
+					this->compressedCount = 1;
+					return true;
+				}
 				signed int target = this->lookahead[l];
 				if(target == -1) break; // no more data to process.
 				if(possibleSize == 0 && l > 0) break; // no matches found
@@ -329,9 +339,7 @@ class LZSSCompression{
 					if(transferCount <= 0) break;
 				}
 			}
-			
 			if(possibleSize <= 0){
-				if(this->lookahead[0] == -1) return false;
 				this->compressedCount = 1;
 				this->insertLiteral(0);
 				this->movDictionary(lookahead[0]);
@@ -434,16 +442,25 @@ class LZSSCompression{
                                 return false;
                         }
 			this->overflowOffset = 0;
-			
+			this->lookaheadAvailable = 0;
 			// init lookahead
-			for(int i=0; i<this->lookahead_s || i<dataSize; i++)
+			for(int i=0; i<this->lookahead_s || i<dataSize; i++){
                                 this->shiftLookahead(data, dataSize, i);
+			}
 			// process data
 			for(int i=0; i<dataSize; i++){
-				this->encode();
+				bool encCode = this->encode(data[dataSize-1]);
+				if(!encCode && this->error > -1){
+					printf("Error : %s\n", this->getErrorMsg().c_str());
+					return false;
+				}
                                 for(int j=0; j<this->compressedCount; j++)
                                         this->shiftLookahead(data, dataSize, i+this->lookahead_s+j);
                                 i = i + this->compressedCount-1;
+				if(!encCode && this->error == -1){
+					printf("Failed Encoding break.\n");
+					break;
+				}
 
 			}
 			return true;
@@ -466,7 +483,9 @@ class LZSSCompression{
 					break;
 				}else if(i > 0 && (7-this->overflowOffset) == 7){
 					i++;
-					if(i>=dataSize) return false;
+					if(i>=dataSize){
+						return true;
+					}
 				}
 				int flag = (data[i] & 0xff) >> (7-this->overflowOffset) & 0x01;
 				if(flag == 0){ // literal
