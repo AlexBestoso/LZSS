@@ -1,4 +1,4 @@
-# LZSS - C++
+# LZSS - C++, JavaScript
 LZSS Compression
 
 <b>NOTICE : The JavaScript implementation has yet to go through any quality assurance testing. Though it should work becuase I said so. </b>
