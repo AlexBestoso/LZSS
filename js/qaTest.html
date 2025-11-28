@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>LZSS Compression Tests</title>
+	<script src="./LzssCompression.class.js" type="text/javascript"></script> 
+	
+</head>
+<body>
+	<script type="text/javascript">
+		function test1(){
+			var mode = document.getElementById("test1_button").innerHTML;
+			if(mode === "Compress"){
+				let lzss = new LZSSCompression();
+				var target = document.getElementById("test1").innerHTML.split('');
+                                for(var i=0; i<target.length; i++)
+                                        target[i] = target[i].charCodeAt(0);
+				
+				if(!lzss.compress(target, target.length)){
+					console.log("Compression failed.");
+				}else{
+					console.log("Compression Successful.");
+					document.getElementById("test1").innerHTML = lzss.out;
+					document.getElementById("test1_size").innerHTML = lzss.out_s;
+					document.getElementById("test1_button").innerHTML = "Decompress";
+				}
+			}else{
+				let lzss = new LZSSCompression();
+                                var target = document.getElementById("test1").innerHTML.split(',');
+				for(var i=0; i<target.length; i++)
+	  				target[i] = parseInt(target[i]);
+                                if(!lzss.decompress(target, target.length)){
+                                        console.log("Decompression failed.");
+                                }else{
+                                        console.log("Decompression Successful.");
+					for(var i=0; i<lzss.out_s; i++)
+						lzss.out[i] = String.fromCharCode(lzss.out[i]);
+                                        document.getElementById("test1").innerHTML = lzss.out.join('');
+                                        document.getElementById("test1_size").innerHTML = lzss.out_s;
+                                        document.getElementById("test1_button").innerHTML = "Compress";
+				}
+			}
+		}
+	</script>
+	<h1>Testing LZSS Compression</h1><br><br>
+
+	<table border="1">
+	<tr>
+		<td colspan="2"><h2>Token Compression Test</h2></td>
+	</tr>
+	<tr>
+	<td colspan="2"><pre id="test1">This is my compression algorithm. It is very cool. I like compression.</pre></td>
+	</tr>
+	<tr>
+		<td><button id="test1_button" onclick="test1()">Compress</button></td>
+		<td>String Size : <div id="test1_size">70</div></td>
+	</tr>
+	</table>
+	
+</body>
+</html>

@@ -6,7 +6,7 @@
 int main(void){
 	printf("Testing Compression.\n");
 	LZSSCompression lzss;
-	char test[256];
+/*	char test[256];
 	printf("Compressing (%d)\n\t", 256);
 	for(int i=0; i<256; i++){
 		test[i] = (char)i;
@@ -15,6 +15,11 @@ int main(void){
 	if(!lzss.compress(test, 256)){
 		printf("Compression Failed: '%s'\n", lzss.getErrorMsg().c_str());
 		exit(EXIT_FAILURE);
+	}*/
+	std::string msg = "This is my compression algorithm. it is very cool. I like compression.";
+	printf("Compressing (%ld) %s\n", msg.length(), msg.c_str());
+	if(!lzss.compress((char *)msg.c_str(), msg.length())){
+		printf("Compression Failed: '%s'\n", lzss.getErrorMsg().c_str());
 	}
 	printf("Compression Succeeded, compressed to %ld bytes\n\n", lzss.out_s);
 	for(int i=0; i<lzss.out_s; i++){
@@ -34,7 +39,7 @@ int main(void){
 
 	printf("Decompression Succeeded, decompressed to %ld bytes\n\n", lzss.out_s);
 	for(int i=0; i<lzss.out_s; i++){
-		printf("%d ", lzss.out[i]);
+		printf("%c", lzss.out[i]);
 	}printf("\n");
 	
 	delete[] compressedData;

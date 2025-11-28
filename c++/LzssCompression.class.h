@@ -446,8 +446,10 @@ class LZSSCompression{
 			this->overflowOffset = 0;
 			this->lookaheadAvailable = 0;
 			// init lookahead
-			for(int i=0; i<this->lookahead_s || i<dataSize; i++){
-                                this->shiftLookahead(data, dataSize, i);
+			for(int i=0; i<this->lookahead_s && i<dataSize; i++){
+                                //this->shiftLookahead(data, dataSize, i);
+				this->lookahead[i] = (signed int)data[i];
+				this->lookaheadAvailable++;
 			}
 			// process data
 			for(int i=0; i<dataSize; i++){
